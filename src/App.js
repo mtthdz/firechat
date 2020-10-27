@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import './App.css';
 
 import firebase from 'firebase/app';
@@ -33,7 +34,7 @@ function App() {
       <section>
         {/* if user is logged in, chatroom will open */}
         {/* if user is logged out (null), sign-in window will show */}
-        {user ? <Chatroom /> : <SignIn />}
+        {user ? <ChatRoom /> : <SignIn />}
       </section>
 
     </div>
@@ -52,13 +53,62 @@ function SignIn() {
   )
 }
 
-function SignOut() {
-  return auth.currentUser && (
-    <button onClick={() => auth.signOut()}>Sign Out</button>
+// function SignOut() {
+//   return auth.currentUser && (
+//     <button onClick={() => auth.signOut()}>Sign Out</button>
+//   )
+// }
+
+function ChatRoom() {
+  const messagesRef = firestore.collection('messages');
+  const query = messagesRef.orderBy('createdAt').limit(25);
+
+  // we listen to real-time updates with the collection data hook
+  const [messages] = useCollectionData(query, { idField: 'id' });
+  const [formValue, setFormValue] = useState('');
+
+  const sendMessage = async(e) => {
+    e.preventDefault();
+    const { uid, photoURL } = auth.currentUser;
+
+    await messagesRef.add({
+      text: formValue,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      uid,
+      photoURL
+    });
+
+    setFormValue('');
+  }  
+
+  return (
+    <>
+      <div>
+        {/* remember we need to add a key when iterating through to prevent redundant actions */}
+        {messages && messages.map(msg => <ChatMessage key={msg.id} message={msg} />)}
+      </div>
+
+      <form onSubmit={sendMessage}>
+        <input value={formValue} onChange={(e) => setFormValue(e.target.value)} />
+        <button type="submit">🕊</button>
+      </form>
+    </>
   )
 }
 
-function ChatRoom() {
+function ChatMessage(props) {
+  // stored props in variable
+  const { text, uid, photoURL } = props.message;
+
+  const messageClass = uid === auth.currentUser.uid ? 'sent' : 'received';
+
+  return (
+    <div className={`message ${messageClass}`}>
+      <img src={photoURL} alt={uid} />
+      <p>{text}</p>
+    </div>
+  )
 }
+
 
 export default App;
