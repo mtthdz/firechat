@@ -24,10 +24,41 @@ const auth = firebase.auth();
 
 
 function App() {
+  const [user] = useAuthState(auth);
+
   return (
     <div className="App">
+      <header></header>
+
+      <section>
+        {/* if user is logged in, chatroom will open */}
+        {/* if user is logged out (null), sign-in window will show */}
+        {user ? <Chatroom /> : <SignIn />}
+      </section>
+
     </div>
   );
+}
+
+function SignIn() {
+  const signInWithGoogle = () => {
+    // this will provide a pop-up signin window
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider);
+  }
+
+  return (
+    <button onClick={signInWithGoogle}>Sign in with Google</button>
+  )
+}
+
+function SignOut() {
+  return auth.currentUser && (
+    <button onClick={() => auth.signOut()}>Sign Out</button>
+  )
+}
+
+function ChatRoom() {
 }
 
 export default App;
